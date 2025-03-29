@@ -1,156 +1,120 @@
 @echo off
-cls
-echo [INFO] Checking system requirements...
+setlocal enabledelayedexpansion
+
+echo [INFO] Fixing FFmpeg installation...
 echo --------------------------------------
 
 
-echo yt-audio-picker log file > yt-audio-picker.log
-echo %date% %time% >> yt-audio-picker.log
+set "CURRENT_DIR=%CD%"
 
 
 where python >nul 2>nul
 if %errorlevel% neq 0 (
     echo [INFO] Python not found. Installing Python...
-    echo Python not found. Attempting to install... >> yt-audio-picker.log
-    curl -o python_installer.exe https://www.python.org/ftp/python/3.12.0/python-3.12.0-amd64.exe
-    if %errorlevel% neq 0 (
-        echo [ERROR] Failed to download Python installer. >> yt-audio-picker.log
-        echo [ERROR] Failed to download Python installer. Please check your internet connection.
-        goto error
-    )
-    echo Running Python installer... >> yt-audio-picker.log
-    start /wait python_installer.exe /quiet InstallAllUsers=1 PrependPath=1
-    if %errorlevel% neq 0 (
-        echo [ERROR] Python installation failed. >> yt-audio-picker.log
-        echo [ERROR] Python installation failed. Please try installing Python manually.
-        goto error
-    )
-    del python_installer.exe
+    curl -L -o "%CURRENT_DIR%\python_installer.exe" https://www.python.org/ftp/python/3.12.0/python-3.12.0-amd64.exe
+    "%CURRENT_DIR%\python_installer.exe" /quiet InstallAllUsers=1 PrependPath=1
+    del "%CURRENT_DIR%\python_installer.exe"
+    echo [INFO] Python installed successfully.
+) else (
+    echo [INFO] Python already installed.
 )
 
 
-echo [INFO] Installing required Python packages...
-echo Installing required Python packages... >> yt-audio-picker.log
-pip install yt-dlp 
+echo [INFO] Installing/Upgrading yt-dlp...
+pip install --upgrade yt-dlp
 if %errorlevel% neq 0 (
-    echo [ERROR] Failed to install yt-dlp. >> yt-audio-picker.log
-    echo [ERROR] Failed to install yt-dlp. Please check your internet connection.
-    goto error
+    echo [ERROR] Failed to install yt-dlp.
+    pause
+    exit /b 1
 )
 
 
-set FFMPEG_DIR=%CD%\ffmpeg
+echo [INFO] Downloading FFmpeg...
+set "FFMPEG_DIR=%CURRENT_DIR%\ffmpeg"
+if not exist "%FFMPEG_DIR%" mkdir "%FFMPEG_DIR%"
+
 if not exist "%FFMPEG_DIR%\bin\ffmpeg.exe" (
-    echo [INFO] Downloading FFmpeg...
-    echo Downloading FFmpeg... >> yt-audio-picker.log
-    
-    
-    curl -L -o ffmpeg.zip https://github.com/GyanD/codexffmpeg/releases/download/2023-03-05-git-912ac82f3c/ffmpeg-6.0-full_build.zip
+    :: Download a more reliable direct link
+    curl -L -o "%CURRENT_DIR%\ffmpeg.zip" "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n6.1-latest-win64-gpl-6.1.zip"
     if %errorlevel% neq 0 (
-        echo [ERROR] Failed to download FFmpeg. >> yt-audio-picker.log
-        echo [ERROR] Failed to download FFmpeg. Please check your internet connection.
-        goto error
+        echo [ERROR] Failed to download FFmpeg.
+        pause
+        exit /b 1
     )
     
-    echo Creating FFmpeg directory... >> yt-audio-picker.log
-    mkdir "%FFMPEG_DIR%" 2>nul
     
-    echo Extracting FFmpeg using PowerShell... >> yt-audio-picker.log
-    powershell -command "& {Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory('ffmpeg.zip', '%FFMPEG_DIR%')}"
+    echo [INFO] Extracting FFmpeg...
+    powershell -Command "Expand-Archive -Path '%CURRENT_DIR%\ffmpeg.zip' -DestinationPath '%FFMPEG_DIR%' -Force"
     if %errorlevel% neq 0 (
-        echo [ERROR] Failed to extract FFmpeg using PowerShell. >> yt-audio-picker.log
-        echo [ERROR] Failed to extract FFmpeg. Trying alternative method...
-        
-        
-        echo Trying alternative extraction method... >> yt-audio-picker.log
-        powershell -command "Expand-Archive -Path 'ffmpeg.zip' -DestinationPath '%FFMPEG_DIR%' -Force"
+        echo [WARNING] PowerShell extraction failed, trying alternative method...
+        :: Try another PowerShell approach
+        powershell -Command "& {Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory('%CURRENT_DIR%\ffmpeg.zip', '%FFMPEG_DIR%')}"
         if %errorlevel% neq 0 (
-            echo [ERROR] All extraction methods failed. >> yt-audio-picker.log
-            echo [ERROR] Failed to extract FFmpeg. Please extract the zip file manually.
-            goto error
+            echo [ERROR] Failed to extract FFmpeg using PowerShell.
+            echo [INFO] Please extract the ffmpeg.zip file manually.
+            pause
+            exit /b 1
         )
     )
     
-    del ffmpeg.zip
-    
-    
-    echo Locating FFmpeg binaries... >> yt-audio-picker.log
-    set "FFMPEG_BIN="
-    for /r "%FFMPEG_DIR%" %%G in (ffmpeg.exe) do (
-        set "FFMPEG_BIN=%%~dpG"
-        echo Found FFmpeg at: %%~dpG >> yt-audio-picker.log
-        goto ffmpeg_found
-    )
-    
-    if not defined FFMPEG_BIN (
-        echo [ERROR] Could not locate FFmpeg binary in extracted files. >> yt-audio-picker.log
-        echo [ERROR] Could not locate FFmpeg binary in extracted files.
-        goto error
-    )
-    
-    :ffmpeg_found
-    echo FFmpeg found at: %FFMPEG_BIN% >> yt-audio-picker.log
-    
-    
-    set "PATH=%FFMPEG_BIN%;%PATH%"
-    
-    
-    echo Adding FFmpeg to system PATH... >> yt-audio-picker.log
-    setx PATH "%FFMPEG_BIN%;%PATH%" >nul
-    if %errorlevel% neq 0 (
-        echo [WARNING] Failed to update PATH environment variable. >> yt-audio-picker.log
-        echo [WARNING] Failed to update PATH environment variable. 
-        echo [WARNING] You may need to add FFmpeg to your PATH manually.
-    )
+    :: Clean up
+    del "%CURRENT_DIR%\ffmpeg.zip"
 )
 
 
-echo [INFO] Verifying FFmpeg installation...
+set "FFMPEG_BIN="
+for /r "%FFMPEG_DIR%" %%G in (ffmpeg.exe) do (
+    set "FFMPEG_BIN=%%~dpG"
+    goto found_ffmpeg
+)
+
+:found_ffmpeg
+if not defined FFMPEG_BIN (
+    echo [ERROR] Could not find FFmpeg executable.
+    echo [INFO] Please download FFmpeg manually from https://ffmpeg.org/download.html
+    pause
+    exit /b 1
+)
+
+echo [INFO] FFmpeg found at: %FFMPEG_BIN%
+
+
+set "PATH=%FFMPEG_BIN%;%PATH%"
+
+
 where ffmpeg >nul 2>nul
 if %errorlevel% neq 0 (
-    
-    for /r "%FFMPEG_DIR%" %%G in (ffmpeg.exe) do (
-        set "FFMPEG_BIN=%%~dpG"
-        set "PATH=%FFMPEG_BIN%;%PATH%"
-        echo [INFO] Found FFmpeg at: %%~dpG
-        echo Found and added FFmpeg to current PATH: %%~dpG >> yt-audio-picker.log
-        goto verify_again
-    )
-    
-    :verify_again
-    where ffmpeg >nul 2>nul
-    if %errorlevel% neq 0 (
-        echo [WARNING] FFmpeg is not accessible in the current PATH. >> yt-audio-picker.log
-        echo [WARNING] FFmpeg is not accessible in the current PATH.
-        echo [WARNING] You may need to restart the command prompt or add FFmpeg to your PATH manually.
-    )
+    echo [WARNING] FFmpeg is still not accessible in the PATH.
+    echo [INFO] Creating a launcher batch file that will set the PATH correctly.
+) else (
+    echo [INFO] FFmpeg is accessible in the current PATH.
 )
 
 
-if not exist "main.py" (
-    echo [ERROR] main.py not found in the current directory. >> yt-audio-picker.log
-    echo [ERROR] main.py not found in the current directory.
-    echo Please make sure the main.py file is in the same folder as this batch file.
-    goto error
+echo [INFO] Creating launcher...
+echo @echo off > "%CURRENT_DIR%\run-yt-audio-picker.bat"
+echo cd /d "%CURRENT_DIR%" >> "%CURRENT_DIR%\run-yt-audio-picker.bat"
+echo set "PATH=%FFMPEG_BIN%;%%PATH%%" >> "%CURRENT_DIR%\run-yt-audio-picker.bat"
+echo python main.py >> "%CURRENT_DIR%\run-yt-audio-picker.bat"
+echo pause >> "%CURRENT_DIR%\run-yt-audio-picker.bat"
+
+
+if not exist "%CURRENT_DIR%\main.py" (
+    echo [WARNING] main.py not found in the current directory.
+    echo [INFO] Please make sure main.py is in the same folder as this script.
 )
 
-
-echo [INFO] All dependencies installed. Starting yt-audio-picker...
-echo Starting yt-audio-picker... >> yt-audio-picker.log
-python main.py
-if %errorlevel% neq 0 (
-    echo [ERROR] Failed to run main.py. >> yt-audio-picker.log
-    echo [ERROR] Failed to run main.py. 
-    goto error
+echo [SUCCESS] Setup complete!
+echo FFmpeg has been installed to: %FFMPEG_DIR%
+echo A launcher "run-yt-audio-picker.bat" has been created in the current folder.
+echo.
+echo [INFO] Would you like to run the program now? (Y/N)
+choice /c YN /n
+if %errorlevel% equ 1 (
+    cd /d "%CURRENT_DIR%"
+    set "PATH=%FFMPEG_BIN%;%PATH%"
+    python main.py
 )
 
-echo [INFO] Program completed successfully. >> yt-audio-picker.log
-goto end
-
-:error
-echo [ERROR] An error occurred during setup. See yt-audio-picker.log for details.
-echo Please try to run the script again or install the dependencies manually.
-
-:end
-echo [INFO] Press any key to exit...
-pause > nul
+pause
+exit /b 0
