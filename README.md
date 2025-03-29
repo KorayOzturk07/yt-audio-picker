@@ -1,63 +1,89 @@
-yt-audio-picker
 
-A simple terminal-based YouTube audio downloader that extracts high-quality audio from YouTube videos and saves them as MP3 files.
+# yt-audio-picker
 
-Features
+A Python-based YouTube audio downloader that allows you to download and convert YouTube videos to MP3 format with a specified audio quality.
 
-✅ Download highest quality audio from YouTube videos
-✅ Saves audio as high-bitrate MP3 files
-✅ Simple terminal-based user input
-✅ Windows batch file (.bat) for easy execution
+## Features
 
-Requirements
+- Download audio from YouTube videos in MP3 format.
+- Convert audio to your preferred bitrate (320 kbps, 256 kbps, 192 kbps, etc.).
+- Supports custom download directories.
+- Saves audio files with a timestamp in the filename to avoid conflicts.
+- Optional thumbnail embedding and metadata processing.
 
-Python 3.x installed
+## Requirements
 
-yt-dlp (YouTube downloader library)
+- Python 3.x
+- `yt-dlp` library (installable via pip)
+- `FFmpeg` (used for audio conversion)
 
-ffmpeg (for audio conversion)
+## Installation
 
-Installation
+1. Clone this repository or download the script.
 
-Install Python (if not already installed):
+2. Install the required Python dependencies:
 
-Download and install Python from: https://www.python.org/downloads/
+   ```bash
+   pip install yt-dlp
+   ```
 
-Make sure to check the box "Add Python to PATH" during installation.
+3. Install FFmpeg if you don't have it:
 
-Install dependencies:
-Open a terminal or command prompt and run:
+   - On Ubuntu/Debian:
 
-pip install yt-dlp
+     ```bash
+     sudo apt install ffmpeg
+     ```
 
-You may also need ffmpeg:
+   - On macOS:
 
-sudo apt install ffmpeg  # Linux (Ubuntu/Debian)
-choco install ffmpeg      # Windows (Chocolatey)
-brew install ffmpeg       # macOS (Homebrew)
+     ```bash
+     brew install ffmpeg
+     ```
 
-Usage
+   - On Windows, download FFmpeg from the [official website](https://ffmpeg.org/download.html) and add it to your system's PATH.
 
-1. Run the Python script manually
+## Usage
 
-Open a terminal or command prompt and run:
+### Running the Script
 
+To use the script, simply run the Python file:
+
+```bash
 python main.py
+```
 
-Then, enter a YouTube video URL when prompted.
+### Steps:
 
-2. Use the Windows batch file (for easy execution)
+1. **Enter the YouTube video URL**: You'll be prompted to enter a valid YouTube URL from which you wish to download the audio.
 
-If you're on Windows, simply double-click download_audio.bat to run the script.
+2. **Select the download directory**: Optionally, specify a directory where the audio file will be saved (default is `downloads`).
 
-Output Location
+3. **Select the audio quality**: Choose an audio quality from the available options (`320`, `256`, `192`, `128`, etc.). If no input is provided, the default quality is `320` kbps.
 
-The downloaded MP3 files will be saved in the downloads/ folder inside the script directory.
+4. **Download Process**: The script will download the audio in the selected quality and save it as an MP3 file with a timestamp to avoid file name conflicts.
 
-Troubleshooting
+### Example:
 
-Python not recognized? Ensure Python is added to your system PATH.
+```bash
+yt-audio-picker
+==================================================
+Please enter YouTube video URL: https://www.youtube.com/watch?v=xyz123
+Enter download directory (press Enter for default 'downloads'): my_music
+Select audio quality in kbps (320/256/192/128/96/64) [default: 320]: 256
+Downloading audio from: https://www.youtube.com/watch?v=xyz123
+Found: Sample Video Title
+Starting download with quality: 256kbps
+Download complete! File saved to my_music
+Download successful!
+```
 
-yt-dlp not found? Run pip install yt-dlp again.
+## Notes
 
-ffmpeg errors? Ensure ffmpeg is installed and accessible from the command line.
+- The script automatically creates the output directory if it does not exist.
+- If you encounter any issues with the download, ensure that you have `FFmpeg` installed and properly configured.
+- You can press `Ctrl + C` to cancel the download process at any time.
+
+## License
+
+This project is licensed under the GPL 3.0 License - see the [LICENSE](LICENSE) file for details.
