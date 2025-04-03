@@ -10,7 +10,7 @@ import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 
-# Dil sözlükleri
+
 LANGUAGES = {
     'en': {
         'welcome': "YouTube Downloader",
@@ -105,7 +105,7 @@ class Downloader:
         self.lock = threading.Lock()
         self.success_count = 0
         self.failed_count = 0
-        self.max_workers = 5  # More stable default for parallel downloads
+        self.max_workers = 5  
         self.download_format = DownloadFormat.AUDIO
         self.audio_quality = AudioQuality.BEST
         self.video_quality = VideoQuality.HD
@@ -167,14 +167,14 @@ class Downloader:
                             int(f.get('filesize', f.get('filesize_approx', 0)) // (1024 * 1024)
                         ))
                 
-                # Remove duplicates and sort
-                formats = list({f[0]: f for f in formats}.values())  # Deduplicate by format_id
+                
+                formats = list({f[0]: f for f in formats}.values())  
                 if self.download_format == DownloadFormat.AUDIO:
                     formats.sort(key=lambda x: int(x[2].replace('kbps', '')) if 'kbps' in x[2] else 0, reverse=True)
                 else:
                     formats.sort(key=lambda x: int(x[2].replace('p', '')) if x[2].endswith('p') else 0, reverse=True)
                 
-                return formats[:10]  # Return top 10 formats
+                return formats[:10]  
         except Exception as e:
             print(f"❌ Error getting available formats: {e}")
             return None
@@ -267,14 +267,14 @@ class Downloader:
                 ydl_opts['prefer_ffmpeg'] = True
                 ydl_opts['ffmpeg_location'] = self.ffmpeg_path or ''
             else:
-                # Fixed format selection for video with audio
+                
                 ydl_opts['format'] = f'bestvideo[height<={self.video_quality.value}]+bestaudio/best[height<={self.video_quality.value}]'
                 ydl_opts['merge_output_format'] = 'mp4'
                 ydl_opts['postprocessors'] = [
                     {'key': 'EmbedThumbnail'},
                     {'key': 'FFmpegMetadata'},
                 ]
-                # Ensure we have both video and audio
+                
                 ydl_opts['format_sort'] = ['vcodec:h264', 'acodec:aac']
                 ydl_opts['merge_output_format'] = 'mp4'
 
@@ -365,7 +365,7 @@ class Downloader:
                 self.success_count = 0
                 self.failed_count = 0
                 
-                # Create playlist-specific subdirectory
+                
                 playlist_dir = os.path.join(output_dir, self.sanitize_filename(playlist_title))
                 os.makedirs(playlist_dir, exist_ok=True)
                 
@@ -388,7 +388,7 @@ class Downloader:
                         )
                     
                     for future in as_completed(futures):
-                        # Just wait for completion, results are handled in download_single_file
+                        
                         pass
                 
                 print(f"\n🎉 {self.t('download_progress', self.success_count, total_videos, self.failed_count)}")
@@ -428,23 +428,23 @@ class Downloader:
     def main(self):
         """Main application flow"""
         try:
-            # Dil seçimi
+            
             self.language = self.select_language()
             self.translations = LANGUAGES.get(self.language, LANGUAGES['en'])
             
             self.display_header()
             
-            # URL girişi
+            
             while True:
                 url = input(f"\n🎵 {self.t('enter_url')} ").strip()
                 if self.validate_url(url):
                     break
                 print(f"❌ {self.t('invalid_url')}")
 
-            # Format seçimi
+            
             self.download_format = self.select_format()
             
-            # Format bilgileri
+            
             if not self.is_playlist(url):
                 formats = self.get_available_formats(url)
                 if formats:
@@ -452,10 +452,10 @@ class Downloader:
                     for i, (format_id, ext, quality, size) in enumerate(formats[:5], 1):
                         print(self.t('format_info', i, ext.upper(), quality, size))
 
-            # Kalite seçimi
+            
             self.select_quality()
             
-            # İndirme ayarları
+            
             custom_dir = input(f"\n📁 {self.t('download_dir')} ").strip()
             output_dir = os.path.expanduser(custom_dir) if custom_dir else "downloads"
             
@@ -470,7 +470,7 @@ class Downloader:
                 metadata['album'] = input(f"{self.t('metadata_album')} ").strip()
                 metadata['date'] = input(f"{self.t('metadata_date')} ").strip()
 
-            # İndirme işlemi
+            
             print("\n" + "="*50)
             if self.is_playlist(url):
                 success = self.download_playlist(url, output_dir, metadata)
