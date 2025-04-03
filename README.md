@@ -19,7 +19,7 @@ Ensure you have the following dependencies installed before running the script:
 ## Installation
 1. Clone the repository or download `ytad.py`:
    ```sh
-   git clone https://github.com/yourusername/ytad.git
+   git clone https://github.com/KorayOzturk07/yt-audio-picker
    cd ytad
    ```
 
