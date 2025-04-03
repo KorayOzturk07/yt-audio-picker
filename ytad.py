@@ -120,7 +120,7 @@ class Downloader:
     def display_header(self):
         """Display fancy ASCII art header"""
         print(r"""
-           
+              
             __                __
    __  __  / /_  ____ _  ____/ /
   / / / / / __/ / __ `/ / __  / 
@@ -128,10 +128,7 @@ class Downloader:
  \__, /  \__/  \__,_/  \__,_/   
 /____/                          
 
- __________________________________________________________________________
-|                                                                          |
-|                  {}                                                      |
-|__________________________________________________________________________|
+              
 """.format(self.t('welcome')))
 
     def sanitize_filename(self, filename: str) -> str:
